@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class BoardManager : MonoBehaviour
 {
@@ -11,6 +12,7 @@ public class BoardManager : MonoBehaviour
     [SerializeField] private Transform gridParent;
 
     [SerializeField] private GameObject cardPrefab;
+   
 
     private void Awake()
     {
@@ -34,6 +36,7 @@ public class BoardManager : MonoBehaviour
     {
         GameManager.Instance.GenerateGrid += InitializeBoardLayout;
         UIManager.Instance.OnHomeClick += ClearCards;
+        CardProperty.OnCardFlipped += CheckMatch;
     }
 
     private void InitializeBoardLayout(int totalcards)
@@ -68,11 +71,15 @@ public class BoardManager : MonoBehaviour
 
         for (int i = 0; i < count; i++)
         {
-            int rand = Random.Range(i, count);
+            int rand = UnityEngine.Random.Range(i, count);
 
             // Swap sibling order
             gridParent.GetChild(i).SetSiblingIndex(rand);
         }
+
+        //ShowPreview?.Invoke();
+        StartCoroutine(PreviewGrid());
+        DebugManager.Instance.Log("Previewing the grid : Boradmanager");
     }
 
     private void ClearCards()
@@ -85,4 +92,31 @@ public class BoardManager : MonoBehaviour
             Destroy(child.gameObject);
         }
     }
+
+    private void CheckMatch(CardProperty cdprperty)
+    {
+        DebugManager.Instance.Log($"---Checking match --- : Boradmanager | {cdprperty.CardValue}");
+    }
+
+    private IEnumerator PreviewGrid()
+    {
+        yield return new WaitForSeconds(1f);
+
+        int count = gridParent.childCount;
+
+        //Flip
+        for (int i = 0; i < count; i++)
+        {
+            gridParent.GetChild(i).GetComponent<Animator>().SetTrigger("flip");
+        }
+
+        yield return new WaitForSeconds(1f);
+
+        //Flip Back
+        for (int i = 0; i < count; i++)
+        {
+            gridParent.GetChild(i).GetComponent<Animator>().SetTrigger("flipback");
+        }
+    }
+    
 }

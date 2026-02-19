@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using System;
 
 public class CardProperty : MonoBehaviour
 {
@@ -17,6 +18,8 @@ public class CardProperty : MonoBehaviour
 
     private Button button;
 
+    public static event Action<CardProperty> OnCardFlipped;
+
     private void Awake()
     {
         Init();
@@ -24,6 +27,8 @@ public class CardProperty : MonoBehaviour
 
     private void Init()
     {
+        BindEvents();
+
         //Set card value
         animator = GetComponent<Animator>();
         button = GetComponent<Button>();
@@ -31,7 +36,12 @@ public class CardProperty : MonoBehaviour
 
         valueText = transform.GetChild(0).GetComponent<TextMeshProUGUI>();
         valueText.text = CardValue.ToString();
-    }    
+    }   
+    
+    private void BindEvents()
+    {
+        
+    }
 
     private void OnCardClicked()
     {
@@ -40,5 +50,6 @@ public class CardProperty : MonoBehaviour
         animator.SetTrigger("flip");
 
         //Broadcast on Card Flipped
+        OnCardFlipped?.Invoke(GetComponent<CardProperty>());
     }
 }
