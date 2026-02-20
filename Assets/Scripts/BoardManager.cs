@@ -2,17 +2,25 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using UnityEngine.UI;
 
 public class BoardManager : MonoBehaviour
 {
     public static BoardManager Instance;
 
-    private Queue<CardProperty> selectedCards = new Queue<CardProperty>();
+    [SerializeField] private Queue<CardProperty> selectedCards = new Queue<CardProperty>();
+
+    [SerializeField] private List<CardProperty> selectedCardsList = new List<CardProperty>();
 
     [SerializeField] private Transform gridParent;
 
     [SerializeField] private GameObject cardPrefab;
-   
+
+    [SerializeField] private bool isCheckingMatch = false;
+
+    private CardProperty firstSelectedCard;
+    private CardProperty secondSelectedCard;
+
 
     private void Awake()
     {
@@ -36,18 +44,22 @@ public class BoardManager : MonoBehaviour
     {
         GameManager.Instance.GenerateGrid += InitializeBoardLayout;
         UIManager.Instance.OnHomeClick += ClearCards;
-        CardProperty.OnCardFlipped += CheckMatch;
+        CardProperty.OnCardFlipped += OnCardSelected;
     }
 
     private void InitializeBoardLayout(int totalcards)
     {
+        gridParent.GetComponent<GridLayoutGroup>().enabled = true;
+        gridParent.GetComponent<ContentSizeFitter>().enabled = true;
+
         //totalcards = 20;
         DebugManager.Instance.Log($"Started Generating the Grid --- Total Grid Elements {totalcards}");
 
-        int paircount = totalcards / 2;
+        //int paircount = totalcards / 2;
 
         //Create the layout
-        for(int i = 0; i < paircount; i++)
+        //for(int i = 0; i < paircount; i++)
+        for(int i = 0; i < totalcards; i++)
         {
             for(int j = 0; j < 2; j++)
             {
@@ -56,7 +68,7 @@ public class BoardManager : MonoBehaviour
 
                 //Set the card Value
                 go.GetComponent<CardProperty>().CardValue = i;
-                //go.GetComponent<CardProperty>().valueText.text = j.ToString();
+                //go.GetComponent<CardProperty>().valueText.text = i.ToString();
             }
         }
 
@@ -64,7 +76,7 @@ public class BoardManager : MonoBehaviour
     }
 
     private void ShuffleGrid()
-    {
+    {        
         DebugManager.Instance.Log("--- Shuffling the board : BoardManager --- ");
 
         int count = gridParent.childCount;
@@ -84,18 +96,71 @@ public class BoardManager : MonoBehaviour
 
     private void ClearCards()
     {
-        DebugManager.Instance.Log("--- Cleaning all cards : BoardManager --- ");
-
-        //Destroy All Cards
-        foreach (Transform child in gridParent)
+        if (gridParent.childCount > 0)
         {
-            Destroy(child.gameObject);
+            DebugManager.Instance.Log("--- Cleaning all cards : BoardManager --- ");
+
+            //Destroy All Cards
+            foreach (Transform child in gridParent)
+            {
+                Destroy(child.gameObject);
+            }
         }
     }
 
-    private void CheckMatch(CardProperty cdprperty)
+    private void OnCardSelected(CardProperty cdproperty)
     {
-        DebugManager.Instance.Log($"---Checking match --- : Boradmanager | {cdprperty.CardValue}");
+        DebugManager.Instance.Log($"---Checking match --- : Boradmanager | {cdproperty.CardValue}");
+        selectedCards.Enqueue(cdproperty);
+
+        if (selectedCards.Count % 2 == 0 && !isCheckingMatch)
+        {
+            StartCoroutine(CheckForMatch());
+        }
+    }
+
+    private IEnumerator CheckForMatch()
+    {
+        isCheckingMatch = true;
+        //yield return new WaitForSeconds(1f);
+        DebugManager.Instance.Log($"---Checking match --- : Boradmanager");
+
+        while (selectedCards.Count >= 2)
+        {
+            GameManager.Instance.IncrementTurns();
+
+            firstSelectedCard = selectedCards.Dequeue();
+            secondSelectedCard = selectedCards.Dequeue();
+
+            yield return new WaitForSeconds(0.5f);  // Delay for the user to see the flipped cards
+            
+
+            if (firstSelectedCard.CardValue == secondSelectedCard.CardValue)
+            {
+                firstSelectedCard.OnCardMatched();
+                secondSelectedCard.OnCardMatched();
+
+                yield return new WaitForSeconds(0.25f);
+
+                GameManager.Instance.IncrementMatches();
+                //SoundManager.Instance.PlaySound(SoundType.Match);
+
+            }
+            else
+            {
+                Debug.Log("control is in the else" + firstSelectedCard + " : " + secondSelectedCard);
+                firstSelectedCard.FlipBack();
+                secondSelectedCard.FlipBack();
+
+                //SoundManager.Instance.PlaySound(SoundType.Mismatch);
+            }
+
+            firstSelectedCard = null;
+            secondSelectedCard = null;
+
+        }
+
+        isCheckingMatch = false;
     }
 
     private IEnumerator PreviewGrid()
@@ -117,6 +182,21 @@ public class BoardManager : MonoBehaviour
         {
             gridParent.GetChild(i).GetComponent<Animator>().SetTrigger("flipback");
         }
+
+        gridParent.GetComponent<GridLayoutGroup>().enabled = false;
+        gridParent.GetComponent<ContentSizeFitter>().enabled = false;
     }
-    
+
+    private void Reset()
+    {
+
+    }
+
+    private void OnApplicationQuit()
+    {
+        GameManager.Instance.GenerateGrid -= InitializeBoardLayout;
+        UIManager.Instance.OnHomeClick -= ClearCards;
+        CardProperty.OnCardFlipped -= OnCardSelected;
+    }
+
 }

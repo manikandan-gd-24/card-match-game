@@ -27,21 +27,21 @@ public class CardProperty : MonoBehaviour
 
     private void Init()
     {
-        BindEvents();
-
         //Set card value
         animator = GetComponent<Animator>();
         button = GetComponent<Button>();
         button.onClick.AddListener(OnCardClicked);
 
         valueText = transform.GetChild(0).GetComponent<TextMeshProUGUI>();
-        valueText.text = CardValue.ToString();
-    }   
-    
-    private void BindEvents()
-    {
-        
+       
     }
+
+    private void Start()
+    {
+        valueText.text = CardValue.ToString();
+        DebugManager.Instance.Log($"card value : {CardValue}");
+    }
+
 
     private void OnCardClicked()
     {
@@ -49,7 +49,31 @@ public class CardProperty : MonoBehaviour
         DebugManager.Instance.Log($"--- Flipping the card ---{CardValue}");
         animator.SetTrigger("flip");
 
+
+        IsFlipped = true;
+
         //Broadcast on Card Flipped
         OnCardFlipped?.Invoke(GetComponent<CardProperty>());
+    }
+
+    public void OnCardMatched()
+    {
+        IsMatched = true;
+        Destroy(gameObject);
+
+        //StartCoroutine(DiableAndDestroyCard());
+    }
+
+    private IEnumerator DiableAndDestroyCard()
+    {
+        yield return new WaitForSeconds(0.5f);
+
+        Destroy(gameObject);
+    }
+
+    public void FlipBack()
+    {
+        IsFlipped = false;
+        animator.SetTrigger("flipback");
     }
 }

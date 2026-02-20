@@ -17,21 +17,7 @@ public class CardLayoutProperty : ScriptableObject
     public void ValidateLayouts()
     {
         List<Layout> validLayouts = new List<Layout>();
-
-        /*
-        foreach (var layout in LayoutList)
-        {
-            var count = layout.Rows * layout.Columns;
-
-            if (count % 2 == 0 && count > 0)
-            {
-                validLayouts.Add(layout);
-            }
-        }
-
-        LayoutList = validLayouts.ToArray();
-        */
-
+                
         // Removes items that DO NOT meet your criteria
         LayoutList = LayoutList
             .Where(layout => (layout.Rows * layout.Columns) % 2 == 0 && (layout.Rows * layout.Columns) > 0)
