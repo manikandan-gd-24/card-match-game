@@ -2,19 +2,19 @@
 
 
 
-Overview
+* #### **Overview:**
 
-This repository contains the prototype for a simple card-matching game with code name Memory Match developed as part of an assessment.
+This repository contains the prototype for a simple card-matching game with code name Card-Match-game developed as part of an assessment.
 
 
 
-Project Details
+* #### Project Details:
 
 No game assets added. Only audio and animation created inside unity is added. The intention of this assessment is just to showcase the logics and code.
 
 
 
-Features
+* #### Features:
 
 Board Generation
 
@@ -26,7 +26,7 @@ Layout dynamically scales to fit the display.
 
 
 
-Card Flipping
+* #### Card Flipping:
 
 card flipping are done using animation.
 
@@ -36,13 +36,13 @@ cards are initially revealed for certain duration - 1 second;
 
 
 
-Card Match
+* #### Card Match:
 
 Each card hold a unique id to match with its pair. once the card pair are matched it will be destroyed.
 
 
 
-Save System
+* #### Save System:
 
 The game has a save system to store the next playable level and highscore.
 
@@ -50,13 +50,13 @@ Players can either continue where they left(level) or start a new game.
 
 
 
-Scoring System:
+* #### Scoring System:
 
 Each pair give 10 points. The scores are compared against the highscore at the and of every level and saved if its a new highscore. No combo system is implemented.
 
 
 
-Sound Effects:
+* #### Sound Effects:
 
 Background music is added intuitive gameplay.
 
@@ -64,7 +64,7 @@ Sound effects for card flip, correct match, incorrect match and level completed 
 
 
 
-For any inquiries or feedback
+###### For any inquiries or feedback:
 
 email : manikandan.gd.24@gmail.com
 
