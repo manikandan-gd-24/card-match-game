@@ -123,6 +123,10 @@ public class BoardManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Check if the cards have a match
+    /// </summary>
+    /// <returns></returns>
     private IEnumerator CheckForMatch()
     {
         isCheckingMatch = true;
@@ -136,12 +140,18 @@ public class BoardManager : MonoBehaviour
             firstSelectedCard = selectedCards.Dequeue();
             secondSelectedCard = selectedCards.Dequeue();
 
+            firstSelectedCard.GetComponent<Button>().interactable = false;
+            secondSelectedCard.GetComponent<Button>().interactable = false;
+
             yield return new WaitForSeconds(0.5f);  // Delay for the user to see the flipped cards
             
 
             if (firstSelectedCard.CardValue == secondSelectedCard.CardValue)
             {
                 PlaySfxAudio?.Invoke("correctmatch");
+
+                //firstSelectedCard.GetComponent<Button>().interactable = false;
+                //secondSelectedCard.GetComponent<Button>().interactable = false;
 
                 firstSelectedCard.OnCardMatched();
                 secondSelectedCard.OnCardMatched();
@@ -159,6 +169,9 @@ public class BoardManager : MonoBehaviour
                 secondSelectedCard.FlipBack();
 
                 PlaySfxAudio?.Invoke("incorrectmatch");
+
+                firstSelectedCard.GetComponent<Button>().interactable = true;
+                secondSelectedCard.GetComponent<Button>().interactable = true;
                 //SoundManager.Instance.PlaySound(SoundType.Mismatch);
             }
 
@@ -170,6 +183,10 @@ public class BoardManager : MonoBehaviour
         isCheckingMatch = false;
     }
 
+    /// <summary>
+    /// Preview the cards once before the game start
+    /// </summary>
+    /// <returns></returns>
     private IEnumerator PreviewGrid()
     {
         yield return new WaitForSeconds(1f);
@@ -190,7 +207,7 @@ public class BoardManager : MonoBehaviour
             gridParent.GetChild(i).GetComponent<Animator>().SetTrigger("flipback");
         }
 
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(0.5f);
 
         for (int i = 0; i < count; i++)
         {
@@ -199,11 +216,6 @@ public class BoardManager : MonoBehaviour
 
         gridParent.GetComponent<GridLayoutGroup>().enabled = false;
         gridParent.GetComponent<ContentSizeFitter>().enabled = false;
-    }
-
-    private void Reset()
-    {
-
     }
 
     private void OnApplicationQuit()

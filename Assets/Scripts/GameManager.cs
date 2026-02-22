@@ -75,12 +75,18 @@ public class GameManager : MonoBehaviour
         Invoke("BindEvents", 0.5f);
     }
 
+    /// <summary>
+    /// Set to the default values
+    /// </summary>
     private void SetDefaultValues()
     {
         cardLayoutProperty.ValidateLayouts();
         SetGameData(saveSystem.Current.level, saveSystem.Current.highScore);
     }
 
+    /// <summary>
+    /// Subscribe to the events
+    /// </summary>
     private void BindEvents()
     {
         UIManager.Instance.onNewGame += OnNewGameStart;
