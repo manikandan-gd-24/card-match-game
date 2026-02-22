@@ -20,6 +20,8 @@ public class CardProperty : MonoBehaviour
 
     public static event Action<CardProperty> OnCardFlipped;
 
+    
+
     private void Awake()
     {
         Init();

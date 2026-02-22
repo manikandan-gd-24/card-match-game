@@ -10,22 +10,36 @@ public class GameManager : MonoBehaviour
     /// <summary>
     /// INTEGERS ----------
     /// </summary>
-    [SerializeField] private int currentLevelIndex = 0;
     [SerializeField] private int matches = 0;
     [SerializeField] private int turns = 0;
-    [SerializeField] private int currentScore = 0;
     [SerializeField] private int totalPairs = 0;
     [SerializeField] private int totalScore = 0;
+    
+    public int currentLevelIndex = 0;
+    public int lastSavedLevel = 0;
+    public int HighScore = 0;
 
+    /// <summary>
+    /// BOOLEANS ----------
+    /// </summary>
     [SerializeField] private bool isGameCompleted = false;
 
     /// <summary>
     /// Others
     /// </summary>
     [SerializeField] private CardLayoutProperty cardLayoutProperty;
+    [SerializeField] private SaveSystem saveSystem;
+
+    /// <summary>
+    /// EVENTS ----------
+    /// </summary>
+    public event Action OnGameCompleteStarted;
+    public event Action OnGameStart;
 
     public event Action<int> GenerateGrid;
     public event Action<bool> OnLevelCompleted;
+    public event Action<string> PlaySfxAudio;
+
     public event Action<int, int> OnScoreUpdated;
     public event Action<int, int> OnSaveData;
 
@@ -43,33 +57,54 @@ public class GameManager : MonoBehaviour
         }        
     }
 
+    private void OnEnable()
+    {
+        //Init();
+    }
+
     private void Start()
     {
         Init();
+        LoadSavedData(saveSystem.Current.level, saveSystem.Current.highScore);
+
         SetDefaultValues();
     }
 
     private void Init()
     {
-        BindEvents();
+        Invoke("BindEvents", 0.5f);
     }
 
     private void SetDefaultValues()
     {
         cardLayoutProperty.ValidateLayouts();
+        SetGameData(saveSystem.Current.level, saveSystem.Current.highScore);
     }
 
     private void BindEvents()
     {
         UIManager.Instance.onNewGame += OnNewGameStart;
         UIManager.Instance.OnHomeClick += ResetLevelData;
+        UIManager.Instance.OnHomeClick += OnHomeClicked;
         UIManager.Instance.OnMainMenuClicked += ResetLevelData;
+        UIManager.Instance.OnResetDataClicked += ResetGameData;
+
+        SaveSystem.Instance.onDataSaved += LoadSavedData;        
+        SaveSystem.Instance.onDataLoaded += LoadSavedData;        
+    }
+
+    private void SetGameData(int lastlevel, int highscore)
+    {
+        lastSavedLevel = lastlevel;
+        HighScore = highscore;
     }
 
     public void OnNewGameStart()
     {
         DebugManager.Instance.Log("Starting a New game --- Gamemanger");
 
+        OnGameStart?.Invoke();
+        totalScore = 0;
         LoadLevelData();
     }
 
@@ -91,9 +126,6 @@ public class GameManager : MonoBehaviour
 
         matches = 0;
         turns = 0;
-        currentScore = 0;
-
-        //GenerateGrid?.Invoke(totalGridCards);
         GenerateGrid?.Invoke(totalPairs);
     }
 
@@ -109,19 +141,19 @@ public class GameManager : MonoBehaviour
         //currentScore += 10;
         totalScore += 10;
         //UIManager.Instance.UpdateMatchesUI(matches.ToString(), currentScore.ToString());
-
+        //BoardManager.Instance.
         OnScoreUpdated?.Invoke(matches, totalScore);
 
         if(totalPairs == matches)
         {
+            OnGameCompleteStarted?.Invoke();
             //Level completed
             DebugManager.Instance.Log("Level Completed --- GameManager");
-            OnLevelCompeted();
-            
+            StartCoroutine(OnLevelCompeted());            
         }
     }
 
-    private void OnLevelCompeted()
+    private IEnumerator OnLevelCompeted()
     {
         //Update the score
 
@@ -135,8 +167,12 @@ public class GameManager : MonoBehaviour
             isGameCompleted = true;
         }
 
+        yield return new WaitForSeconds(1f);
+        PlaySfxAudio?.Invoke("lvlcompleted");
+
         OnLevelCompleted?.Invoke(isGameCompleted);
-        OnSaveData?.Invoke(currentLevelIndex, totalScore);
+        OnSaveData?.Invoke(lastSavedLevel = currentLevelIndex, totalScore);
+
     }
 
     public void ResetLevelData()
@@ -148,9 +184,34 @@ public class GameManager : MonoBehaviour
         totalPairs = 0;
         currentLevelIndex = 0;
         totalScore = 0;
-        isGameCompleted = false;
+        isGameCompleted = false;        
         
         //Reset all the values - Turns, matches, currentscore
+    }
+
+    private void ResetGameData()
+    {
+        lastSavedLevel = 0;
+        HighScore = 0;
+    }
+
+    private void OnHomeClicked()
+    {
+        //OnSaveData?.Invoke(currentLevelIndex, totalScore);
+    }
+
+    private void LoadSavedData(int level, int lasthighscore)
+    {
+        if (level < cardLayoutProperty.LayoutList.Length)
+            lastSavedLevel = level;
+        else
+            lastSavedLevel = 0;
+
+        HighScore = lasthighscore;
+
+        DebugManager.Instance.Log("highscore : " + lasthighscore);
+        DebugManager.Instance.Log("LastLevel : " + level);
+        //UIManager.Instance.ShowHighScore();
     }
 
     private void OnApplicationQuit()

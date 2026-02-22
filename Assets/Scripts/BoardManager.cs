@@ -21,6 +21,8 @@ public class BoardManager : MonoBehaviour
     private CardProperty firstSelectedCard;
     private CardProperty secondSelectedCard;
 
+    public event Action<string> PlaySfxAudio;
+    
 
     private void Awake()
     {
@@ -110,6 +112,8 @@ public class BoardManager : MonoBehaviour
 
     private void OnCardSelected(CardProperty cdproperty)
     {
+        PlaySfxAudio?.Invoke("cardflipped");
+
         DebugManager.Instance.Log($"---Checking match --- : Boradmanager | {cdproperty.CardValue}");
         selectedCards.Enqueue(cdproperty);
 
@@ -137,9 +141,11 @@ public class BoardManager : MonoBehaviour
 
             if (firstSelectedCard.CardValue == secondSelectedCard.CardValue)
             {
+                PlaySfxAudio?.Invoke("correctmatch");
+
                 firstSelectedCard.OnCardMatched();
                 secondSelectedCard.OnCardMatched();
-
+                
                 yield return new WaitForSeconds(0.25f);
 
                 GameManager.Instance.IncrementMatches();
@@ -152,6 +158,7 @@ public class BoardManager : MonoBehaviour
                 firstSelectedCard.FlipBack();
                 secondSelectedCard.FlipBack();
 
+                PlaySfxAudio?.Invoke("incorrectmatch");
                 //SoundManager.Instance.PlaySound(SoundType.Mismatch);
             }
 
@@ -181,6 +188,13 @@ public class BoardManager : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             gridParent.GetChild(i).GetComponent<Animator>().SetTrigger("flipback");
+        }
+
+        yield return new WaitForSeconds(1f);
+
+        for (int i = 0; i < count; i++)
+        {
+            gridParent.GetChild(i).GetComponent<Button>().interactable = true;
         }
 
         gridParent.GetComponent<GridLayoutGroup>().enabled = false;

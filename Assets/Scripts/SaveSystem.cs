@@ -6,17 +6,50 @@ using System;
 
 public class SaveSystem : MonoBehaviour
 {
+    public static SaveSystem Instance { get; private set; }
+
     private const string FileName = "save_data.json";
     private string FilePath => Path.Combine(Application.persistentDataPath, FileName);
 
-    public SaveData Current { get; private set; } = new SaveData(); // works now
+    //public SaveData Current { get; private set; } = new SaveData(); // works now
+    public SaveData Current = new SaveData(); // works now
+
+    public event Action<int, int> onDataLoaded;
+    public event Action<int, int> onDataSaved;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+
+        Init();
+
+    }
+
 
     private void Start()
     {
+        
         GameManager.Instance.OnSaveData += SaveProgress;
     }
 
-    public SaveData Load()
+    private void Init()
+    {
+        Load();
+
+        //DebugManager.Instance.Log(Current.level.ToString());
+        //DebugManager.Instance.Log(Current.highScore.ToString());
+        
+    }
+
+    //public SaveData Load()
+    public void Load()
     {
         try
         {
@@ -24,7 +57,7 @@ public class SaveSystem : MonoBehaviour
             {
                 Current = CreateDefault();
                 Save(Current);
-                return Current;
+                //return Current;
             }
 
             string json = File.ReadAllText(FilePath);
@@ -33,18 +66,19 @@ public class SaveSystem : MonoBehaviour
             {
                 Current = CreateDefault();
                 Save(Current);
-                return Current;
+                //return Current;
             }
 
             Current = JsonUtility.FromJson<SaveData>(json) ?? CreateDefault();
-            return Current;
+            //onDataLoaded?.Invoke(Current.level,Current.highScore);
+            //return Current;
         }
         catch (Exception e)
         {
             Debug.LogWarning($"SaveSystem Load failed. Creating default. Error: {e.Message}");
             Current = CreateDefault();
             Save(Current);
-            return Current;
+            //return Current;
         }
     }
 
@@ -55,6 +89,7 @@ public class SaveSystem : MonoBehaviour
             string json = JsonUtility.ToJson(data, true);
             File.WriteAllText(FilePath, json);
             Current = data;
+            onDataSaved?.Invoke(Current.level, Current.highScore);
             DebugManager.Instance.Log(json);
         }
         catch (Exception e)
@@ -91,11 +126,11 @@ public class SaveSystem : MonoBehaviour
         }
     }
 
-    private SaveData CreateDefault()
+    public SaveData CreateDefault()
     {
         return new SaveData
         {
-            level = 1,
+            level = 0,
             score = 0,
             highScore = 0
         };

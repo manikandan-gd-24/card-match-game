@@ -24,10 +24,11 @@ public class UIManager : MonoBehaviour
     /// </summary>
     [Header("BUTTONS")]
     [Space(5)]
-    [SerializeField] private Button newGame;
-    [SerializeField] private Button continueGame;
-    [SerializeField] private Button exitGame;
-    [SerializeField] private Button home;
+    [SerializeField] private Button newGame_Button;
+    [SerializeField] private Button continueGame_Button;
+    [SerializeField] private Button exitGame_Button;
+    [SerializeField] private Button home_Button;
+    [SerializeField] private Button resetData_Button;
 
     /// <summary>
     /// ---------- TM_Pro Texts ----------
@@ -37,6 +38,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI matchesText;
     [SerializeField] private TextMeshProUGUI turnsText;
     [SerializeField] private TextMeshProUGUI scoreText;
+    [SerializeField] private TextMeshProUGUI highScoreText;
     [SerializeField] private TextMeshProUGUI levelCompleteUIScoreText;
     [SerializeField] private TextMeshProUGUI gameCompleteUIScoreText;
 
@@ -51,36 +53,80 @@ public class UIManager : MonoBehaviour
     public event Action onNewGame;
     public event Action OnHomeClick;
     public event Action OnMainMenuClicked;
+    public event Action OnResetDataClicked;
 
     private void Awake()
     {
-        Init();
+        if (Instance == null)
+        {
+            Instance = this;
+            //DontDestroyOnLoad(gameObject); // Optional (keeps it between scenes)
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
     private void Start()
     {
-        BindEvents();
+        //Init();
+        Invoke("Init", 1f);
+              
     }
 
     private void Init()
     {
-        Instance = this;
+        continueGame_Button.onClick.AddListener(Continue);
+        newGame_Button.onClick.AddListener(NewGame);
+        exitGame_Button.onClick.AddListener(ExitGame);
+        home_Button.onClick.AddListener(OnHome);
 
-        continueGame.onClick.AddListener(Continue);
-        newGame.onClick.AddListener(NewGame);
-        exitGame.onClick.AddListener(ExitGame);
-        home.onClick.AddListener(OnHome);
+        if (GameManager.Instance.lastSavedLevel > 0)
+        {
+            continueGame_Button.gameObject.SetActive(true);
+        }
+        else
+            continueGame_Button.gameObject.SetActive(false);
+
+        //DebugManager.Instance.Log("Load data : " + GameManager.Instance.highScore.ToString());
+        ShowHighScore();
+        resetData_Button.onClick.AddListener(ResetSavedData);
+
+        BindEvents();
     }
+
+    //private void Load
 
     private void BindEvents()
     {
         GameManager.Instance.OnLevelCompleted += HandleLevelCompleted;
         GameManager.Instance.OnScoreUpdated += UpdateMatchesUI;
+        GameManager.Instance.OnGameCompleteStarted += DisableHome;
+        GameManager.Instance.OnGameStart += ResetData;
+    }
+
+    private void DisableHome()
+    {
+        home_Button.interactable = false;
+    }
+
+    public void EnableHome()
+    {
+        home_Button.interactable = true;
+    }
+
+    public void ShowHighScore()
+    {
+        highScoreText.text = "Highscore : " + GameManager.Instance.HighScore.ToString();
     }
 
     private void Continue()
     {
         //Play Last saved Game
+        if (GameManager.Instance.lastSavedLevel > 0)
+            GameManager.Instance.currentLevelIndex = GameManager.Instance.lastSavedLevel;
+
         NewGame();
 
 
@@ -118,6 +164,8 @@ public class UIManager : MonoBehaviour
 
     private void HandleLevelCompleted(bool gamestatus)
     {
+        home_Button.interactable = false;
+
         if (gamestatus)
         {
             GameCompletedUI.SetActive(true);
@@ -131,6 +179,7 @@ public class UIManager : MonoBehaviour
             GameCompletedUI.SetActive(false);
 
             levelCompleteUIScoreText.text = $"Score : {totalScore.ToString()}";
+            ShowHighScore();
         }
 
         //StartCoroutine(OnLevelCompleted(gamestatus));
@@ -154,6 +203,10 @@ public class UIManager : MonoBehaviour
         mainMenu.SetActive(true);
         gameSceen.SetActive(false);
 
+        if (GameManager.Instance.lastSavedLevel >= 0)
+            continueGame_Button.gameObject.SetActive(true);
+
+        ShowHighScore();
         OnHomeClick?.Invoke();
     }
 
@@ -170,8 +223,25 @@ public class UIManager : MonoBehaviour
         else
             levelCompletedUI.SetActive(false);
 
+        if (GameManager.Instance.lastSavedLevel >= 0)
+            continueGame_Button.gameObject.SetActive(true);
+
+        ShowHighScore();
+
         ResetData();
         OnMainMenuClicked?.Invoke();
+    }
+
+    private void ResetSavedData()
+    {
+        SaveSystem.Instance.ResetSave();
+
+        if (continueGame_Button.gameObject.activeSelf)
+            continueGame_Button.gameObject.SetActive(false);
+
+        highScoreText.text = $"Highscore : {0.ToString()}";
+
+        OnResetDataClicked?.Invoke();
     }
 
     private void ResetData()
